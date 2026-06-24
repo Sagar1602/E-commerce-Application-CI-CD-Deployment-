@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title><%= product ? product.name : 'Product not found' %> • OneCart</title>
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="/">
+      <h1>OneCart</h1>
+      <span class="tagline">(AAPKI APPNI DUKAN)</span>
+    </a>
+    <a class="login-btn" href="/login">Login</a>
+  </header>
+
+  <main class="product-detail">
+    <% if (!product) { %>
+      <div class="not-found">
+        <h2>Product not found</h2>
+        <a href="/">Go back home</a>
+      </div>
+    <% } else { %>
+      <div class="detail-card">
+        <img src="<%= product.image %>" alt="<%= product.name %>" />
+        <div class="detail-info">
+          <h2><%= product.name %></h2>
+          <p class="product-category"><%= product.category %></p>
+          <p class="product-price">₹<%= product.price %></p>
+          <p class="detail-desc"><%= product.description %></p>
+          <button class="submit-btn">Add to Cart</button>
+        </div>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>OneCart (AAPKI APPNI DUKAN)</title>
+</head>
+<body>
+  <!-- Header / Title bar -->
+  <header class="header">
+    <div class="brand">
+      <h1>OneCart</h1>
+      <span class="tagline">(AAPKI APPNI DUKAN)</span>
+    </div>
+    <a class="login-btn" href="/login">Login</a>
+  </header>
+
+  <!-- Category bar -->
+  <nav class="category-bar">
+    <% categories.forEach(function(cat) { %>
+      <a
+        class="category-item <%= (typeof activeCategory !== 'undefined' && activeCategory === cat) ? 'active' : '' %>"
+        href="/category/<%= encodeURIComponent(cat) %>">
+        <%= cat %>
+      </a>
+    <% }); %>
+  </nav>
+
+  <!-- Product suggestions -->
+  <main class="content">
+    <h2 class="section-title">Suggested for you</h2>
+    <div class="product-grid">
+      <% products.forEach(function(product) { %>
+        <!-- target="_blank" opens the product page in a new tab -->
+        <a class="product-card" href="/product/<%= product.id %>" target="_blank" rel="noopener">
+          <img src="<%= product.image %>" alt="<%= product.name %>" />
+          <div class="product-info">
+            <h3><%= product.name %></h3>
+            <p class="product-category"><%= product.category %></p>
+            <p class="product-price">₹<%= product.price %></p>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 OneCart — AAPKI APPNI DUKAN</p>
+  </footer>
+</body>
+</html>

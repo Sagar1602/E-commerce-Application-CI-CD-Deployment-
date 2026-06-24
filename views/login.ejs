@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Login • OneCart</title>
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="/">
+      <h1>OneCart</h1>
+      <span class="tagline">(AAPKI APPNI DUKAN)</span>
+    </a>
+  </header>
+
+  <main class="login-wrapper">
+    <form class="login-card" id="loginForm" action="/login" method="POST" novalidate>
+      <h2>Login</h2>
+
+      <% if (error) { %>
+        <div class="server-error"><%= error %></div>
+      <% } %>
+
+      <div class="field">
+        <label for="username">Username (Email id)</label>
+        <input type="text" id="username" name="username" placeholder="you@example.com" />
+        <small class="error-msg" id="usernameError"></small>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter password" />
+        <small class="error-msg" id="passwordError"></small>
+      </div>
+
+      <button type="submit" class="submit-btn">Login</button>
+      <a class="back-link" href="/">&larr; Back to Home</a>
+    </form>
+  </main>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>
