@@ -116,7 +116,7 @@ jobs:
   
   DOCKER_PUSH:
     needs: DOCKER_BUILD
-    runs-on: slef-hosted
+    runs-on: self-hosted
     steps: 
       - name: Docker login 
         uses: docker/login-action@v4
