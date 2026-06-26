@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 # Optional: use a Nexus npm registry during build.
 # The .npmrc is copied so `npm ci` pulls from your Nexus proxy/group repo.
 COPY package*.json ./
-COPY .npmrc ./
+#COPY .npmrc ./
 
 # Install only production dependencies in a reproducible way.
 RUN npm ci --only=production
