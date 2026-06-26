@@ -163,6 +163,6 @@ jobs:
       - name: Push Docker Image to ECR
         run: |
           docker push \
-          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-2.amazonaws.com/onecart-image:${{ github.run_number }}
+          893097420093.dkr.ecr.ap-south-2.amazonaws.com/onecart-image:${{ github.run_number }}
 
       
