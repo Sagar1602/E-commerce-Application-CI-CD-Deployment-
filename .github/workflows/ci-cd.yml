@@ -164,5 +164,47 @@ jobs:
         run: |
           docker push \
           893097420093.dkr.ecr.ap-south-2.amazonaws.com/onecart-image:${{ github.run_number }}
+  Sending_Notification:
+    needs:
+      - WORKSPACE_CLEANUP
+      - CODE_CHECKOUT
+      - NPM_SETUP
+      - NEXUS_REPOSITORY_PUSH
+      - SONARQUBE_SCAN
+      - DOCKER_BUILD
+      - TRIVY_SCAN
+      - DOCKER_PUSH
+      - ECR_PUSH
 
+    runs-on: self-hosted
+    if: always()
+    steps: 
+      - name: Sending the Notification
+        run: |
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+            "text": " GitHub Actions Report
+
+          Workflow: ${{ github.workflow }}
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Triggered By: ${{ github.actor }}
+          Run Number: ${{ github.run_number }}
+
+          WORKSPACE_CLEANUP: ${{ needs.WORKSPACE_CLEANUP.result }}
+          CODE_CHECKOUT: ${{ needs.CODE_CHECKOUT.result }}
+          NPM_SETUP: ${{ needs.NPM_SETUP.result }}
+          NEXUS_REPOSITORY_PUSH: ${{needs.NEXUS_REPOSITORY_PUSH.result}}
+          SONARQUBE_SCAN: ${{needs.SONARQUBE_SCAN.result}}
+          DOCKER_BUILD: ${{needs.DOCKER_BUILD.result}}
+          TRIVY_SCAN: ${{needs.TRIVY_SCAN.result}}
+          DOCKER_PUSH: ${{needs.DOCKER_PUSH.result}}
+          ECR_PUSH: ${{needs.ECR_PUSH.result}}
+
+
+          View Run:
+          https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }' \
+          "${{secrets.TEAM_WEBHOOK_URL}}"
       
