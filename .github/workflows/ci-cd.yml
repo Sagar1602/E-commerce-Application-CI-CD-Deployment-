@@ -39,7 +39,14 @@ jobs:
 
       - name: NPM test
         run: npm test   
+      
 
+      - name: Create Artifact Directory
+        run: |
+          mkdir -p build-artifacts/onecart-artifact
+
+
+          
       - name: Create Zip file 
         run: |
            zip -r build-artifacts/onecart-artifact/onecart-${{ github.run_number }}.zip \
