@@ -142,7 +142,7 @@ jobs:
 
   ECR_PUSH:
     needs: DOCKER_PUSH 
-    runs-on:
+    runs-on: self-hosted
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
