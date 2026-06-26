@@ -157,7 +157,7 @@ jobs:
       - name: Tag DOCKER Image to ECR 
         run: |
           docker tag \
-          ${{secrets.DOCKER_USERNAME}}/static-website-image:${{ github.run_number }} \
+          ${{secrets.DOCKER_USERNAME}}/onecart-image:${{ github.run_number }} \
           ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.ap-south-2.amazonaws.com/docker-images:${{ github.run_number }}
 
       - name: Push Docker Image to ECR
