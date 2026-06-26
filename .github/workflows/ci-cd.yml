@@ -1,107 +1,93 @@
-name: OneCart CI/CD
-
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-
-env:
-  IMAGE_NAME: onecart
+name: OneCart CI/CD pipeline
+on: push
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # 1. Build & test, installing dependencies from the Nexus npm registry
-  # ---------------------------------------------------------------------------
-  build-and-test:
-    runs-on: ubuntu-latest
+  WORKSPACE_CLEANUP:
+    runs-on: self-hosted
+    steps: 
+      - name: workspace cleanup
+        run: |
+          rm -rf ./* ./.??* || true  
+
+  CODE_CHECKOUT:
+    needs: WORKSPACE_CLEANUP
+    runs-on: self-hosted
     steps:
-      - name: Checkout source
+      - name: code checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+  NPM_SETUP:
+    needs: CODE_CHECKOUT
+    runs-on: self-hosted
+    steps:
+      - name: Node setup
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
-      # Configure npm to use the Nexus group repository.
-      # NEXUS_REGISTRY  -> e.g. http://your-nexus-host:8081/repository/npm-group/
-      # NPM_TOKEN       -> Nexus npm bearer token
-      - name: Configure npm for Nexus
+      - name: NPM Install
+        run: npm ci  
+
+      - name: NPM test
+        run: npm test   
+
+      - name: Create Zip file 
         run: |
-          echo "registry=${NEXUS_REGISTRY}" > .npmrc
-          echo "${NEXUS_REGISTRY#http*:}:_authToken=${NPM_TOKEN}" >> .npmrc
-          echo "always-auth=true" >> .npmrc
-          echo "strict-ssl=false" >> .npmrc
-        env:
-          NEXUS_REGISTRY: ${{ secrets.NEXUS_REGISTRY }}
-          NPM_TOKEN: ${{ secrets.NEXUS_NPM_TOKEN }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-  # ---------------------------------------------------------------------------
-  # 2. Publish the package to the Nexus hosted npm repository
-  # ---------------------------------------------------------------------------
-  publish-to-nexus:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+           zip -r build-artifacts/onecart-artifact/onecart-${{ github.run_number }}.zip \
+           server.js \
+           views \
+           public \
+           package.json \
+           package-lock.json \
+           Dockerfile  
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '18'
+          name: build-artifact
+          path: build-artifacts/onecart-artifact/onecart-${{ github.run_number }}.zip
+  
+  NEXUS_REPOSITORY_PUSH:
+    needs: NPM_SETUP
+    runs-on: self-hosted
+    steps:
+      - name: downlaoding the artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
 
-      - name: Configure npm for Nexus publish
+      - name: uplaod .zip file to nexus repo  
+        run: | 
+          curl -u "${{secrets.NEXUS_USERNAME}}:${{secrets.NEXUS_PASSWORD}}" \
+          --upload-file build-artifacts/onecart-artifact/onecart-${{ github.run_number }}.zip \
+          "http://40.192.118.179:8081/repository/build-artifacts/onecart-artifact/onecart-${{ github.run_number }}.zip"
+ 
+ 
+  SONARQUBE_SCAN:
+    needs: NEXUS_REPOSITORY_PUSH
+    runs-on: self-hosted
+    steps:
+      - name: sonarqube analysis
         run: |
-          echo "registry=${NEXUS_PUBLISH_REGISTRY}" > .npmrc
-          echo "${NEXUS_PUBLISH_REGISTRY#http*:}:_authToken=${NPM_TOKEN}" >> .npmrc
-          echo "always-auth=true" >> .npmrc
-          echo "strict-ssl=false" >> .npmrc
-        env:
-          NEXUS_PUBLISH_REGISTRY: ${{ secrets.NEXUS_PUBLISH_REGISTRY }}
-          NPM_TOKEN: ${{ secrets.NEXUS_NPM_TOKEN }}
-
-      # Publish will fail if the version already exists - bump version in package.json.
-      - name: Publish package
-        run: npm publish || echo "Publish skipped (version may already exist)."
-
-  # ---------------------------------------------------------------------------
-  # 3. Build and push the Docker image
-  # ---------------------------------------------------------------------------
-  docker-build-push:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+          ls -l /opt/sonar-scanner/bin
+          /opt/sonar-scanner/bin/sonar-scanner \
+          -Dsonar.projectKey=onecart-web-application \
+          -Dsonar.projectName=onecart-web-application \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=${{ secrets.SONARQUBE_SERVER }} \
+          -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }}    
+ 
+ 
+  DOCKER_BUILD:
+    needs: SONARQUBE_SCAN
+    runs-on: self-hosted
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - name: Image Build
+        run: docker built -t ${{secrets.DOCKER_USERNAME}}/onecart-image:${{github.run_number}} .
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: docker images list
+        run: docker images
 
-      # Log in to your Docker registry (Docker Hub, or a Nexus docker-hosted repo).
-      - name: Log in to Docker registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          build-args: |
-            NPM_TOKEN=${{ secrets.NEXUS_NPM_TOKEN }}
-          tags: |
-            ${{ secrets.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ secrets.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+      
