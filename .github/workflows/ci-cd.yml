@@ -27,7 +27,12 @@ jobs:
       - name: Verify Workspace
         run: |
           pwd
-          ls -la    
+          ls -la  
+
+      - name: Check Node and npm
+        run: |
+          node -v
+          npm -v      
 
       - name: NPM Install
         run: npm ci  
