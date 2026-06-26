@@ -46,7 +46,7 @@ jobs:
           mkdir -p build-artifacts/onecart-artifact
 
 
-          
+
       - name: Create Zip file 
         run: |
            zip -r build-artifacts/onecart-artifact/onecart-${{ github.run_number }}.zip \
@@ -83,15 +83,25 @@ jobs:
     needs: NEXUS_REPOSITORY_PUSH
     runs-on: self-hosted
     steps:
-      - name: sonarqube analysis
+      - name: SonarQube Scan
         run: |
-          ls -l /opt/sonar-scanner/bin
-          /opt/sonar-scanner/bin/sonar-scanner \
+          docker run --rm \
+          -e SONAR_HOST_URL="${{ secrets.SONARQUBE_SERVER }}" \
+          -e SONAR_TOKEN="${{ secrets.SONARQUBE_TOKEN }}" \
+          -v "${{ github.workspace }}:/usr/src" \
+          sonarsource/sonar-scanner-cli \
           -Dsonar.projectKey=onecart-web-application \
           -Dsonar.projectName=onecart-web-application \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=${{ secrets.SONARQUBE_SERVER }} \
-          -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }}    
+          -Dsonar.sources=/usr/src
+      # - name: sonarqube analysis
+      #   run: |
+      #     ls -l /opt/sonar-scanner/bin
+      #     /opt/sonar-scanner/bin/sonar-scanner \
+      #     -Dsonar.projectKey=onecart-web-application \
+      #     -Dsonar.projectName=onecart-web-application \
+      #     -Dsonar.sources=. \
+      #     -Dsonar.host.url=${{ secrets.SONARQUBE_SERVER }} \
+      #     -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }}    
  
  
   DOCKER_BUILD:
